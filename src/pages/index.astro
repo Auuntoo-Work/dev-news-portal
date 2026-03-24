@@ -1,0 +1,43 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const articles = (await getCollection("articles")).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout>
+  <div class="container">
+    <section class="hero">
+      <h1>&gt; latest <span>developer</span> news</h1>
+      <p>Curated articles on AI, web dev, languages, and DevOps — refreshed every hour by our AI editor.</p>
+    </section>
+
+    <section class="articles-grid">
+      {articles.map((article) => {
+        const date = article.data.pubDate.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        return (
+          <a href={`/articles/${article.id}`} class="article-card">
+            <div class="article-card-meta">
+              {article.data.category && <span class="category">{article.data.category}</span>}
+              <span>{date}</span>
+              <span>{article.data.author}</span>
+            </div>
+            <h2>{article.data.title}</h2>
+            <p>{article.data.description}</p>
+            <div class="tags">
+              {article.data.tags.map((tag) => (
+                <span class="tag">#{tag}</span>
+              ))}
+            </div>
+          </a>
+        );
+      })}
+    </section>
+  </div>
+</BaseLayout>
