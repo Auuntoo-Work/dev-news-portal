@@ -1,0 +1,112 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const articles = (await getCollection("articles")).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const searchData = articles.map((article) => ({
+  slug: article.id,
+  title: article.data.title,
+  description: article.data.description,
+  tags: article.data.tags,
+  category: article.data.category || "",
+  author: article.data.author,
+  date: article.data.pubDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }),
+}));
+---
+
+<BaseLayout title="search" description="Search developer news articles">
+  <div class="container">
+    <section class="search-header">
+      <h1>&gt; search <span>articles</span></h1>
+      <div class="search-input-wrap">
+        <span class="search-prompt">$</span>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="grep -i ..."
+          autocomplete="off"
+          autofocus
+        />
+      </div>
+    </section>
+
+    <section id="search-results" class="articles-grid"></section>
+    <div id="search-empty" class="search-empty" hidden>
+      <p>no matches found.</p>
+    </div>
+    <div id="search-initial" class="search-empty">
+      <p>type to search by title, description, or tags.</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script define:vars={{ searchData }}>
+  const input = document.getElementById("search-input");
+  const resultsEl = document.getElementById("search-results");
+  const emptyEl = document.getElementById("search-empty");
+  const initialEl = document.getElementById("search-initial");
+
+  function renderResults(query) {
+    const q = query.toLowerCase().trim();
+
+    if (!q) {
+      resultsEl.innerHTML = "";
+      emptyEl.hidden = true;
+      initialEl.hidden = false;
+      return;
+    }
+
+    initialEl.hidden = true;
+
+    const matches = searchData.filter((a) => {
+      return (
+        a.title.toLowerCase().includes(q) ||
+        a.description.toLowerCase().includes(q) ||
+        a.tags.some((t) => t.toLowerCase().includes(q))
+      );
+    });
+
+    if (matches.length === 0) {
+      resultsEl.innerHTML = "";
+      emptyEl.hidden = false;
+      return;
+    }
+
+    emptyEl.hidden = true;
+    resultsEl.innerHTML = matches
+      .map(
+        (a) => `
+      <a href="/articles/${a.slug}" class="article-card">
+        <div class="article-card-meta">
+          ${a.category ? `<span class="category">${a.category}</span>` : ""}
+          <span>${a.date}</span>
+          <span>${a.author}</span>
+        </div>
+        <h2>${a.title}</h2>
+        <p>${a.description}</p>
+        <div class="tags">
+          ${a.tags.map((t) => `<span class="tag">#${t}</span>`).join("")}
+        </div>
+      </a>
+    `
+      )
+      .join("");
+  }
+
+  input.addEventListener("input", () => renderResults(input.value));
+
+  // Support ?q= query param
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("q");
+  if (q) {
+    input.value = q;
+    renderResults(q);
+  }
+</script>

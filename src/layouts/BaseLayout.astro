@@ -28,6 +28,9 @@ const pageTitle = title === "dev::news" ? title : `${title} | dev::news`;
           <a href="/tags/ai">ai</a>
           <a href="/tags/web">web</a>
           <a href="/tags/devops">devops</a>
+          <form class="header-search" action="/search" method="get">
+            <input type="text" name="q" placeholder="search..." aria-label="Search articles" />
+          </form>
         </nav>
       </div>
     </header>
